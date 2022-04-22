@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package analyzers;
+package it.unipd.dei.se.analyzers;
 
 import opennlp.tools.lemmatizer.LemmatizerModel;
 import opennlp.tools.namefind.TokenNameFinderModel;
@@ -160,7 +160,7 @@ class AnalyzerUtil {
             throw new IllegalStateException(
                     String.format("Unable to load the stop list %s: %s", stopFile, e.getMessage()), e);
         }
-
+        
         return stopList;
     }
 
