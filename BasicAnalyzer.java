@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 University of Padua, Italy
+ * Copyright 2021 University of Padua, Italy
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,86 +13,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package it.unipd.dei.se.analyzers;
-
+package analyzers;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
-import org.apache.lucene.analysis.charfilter.HTMLStripCharFilter;
-import org.apache.lucene.analysis.core.LetterTokenizer;
 import org.apache.lucene.analysis.core.StopFilter;
-import org.apache.lucene.analysis.core.WhitespaceTokenizer;
-import org.apache.lucene.analysis.en.EnglishMinimalStemFilter;
-import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
-import org.apache.lucene.analysis.en.KStemFilter;
-import org.apache.lucene.analysis.en.PorterStemFilter;
-import org.apache.lucene.analysis.miscellaneous.LengthFilter;
-import org.apache.lucene.analysis.ngram.NGramTokenFilter;
-import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 
 import java.io.IOException;
 import java.io.Reader;
 
-import static it.unipd.dei.se.analyzers.AnalyzerUtil.consumeTokenStream;
-import static it.unipd.dei.se.analyzers.AnalyzerUtil.loadStopList;
+import static analyzers.AnalyzerUtil.consumeTokenStream;
+import static analyzers.AnalyzerUtil.loadStopList;
 
 /**
- * Basic {@link Analyzer} by using different {@link Tokenizer}s and {@link
+ * Introductory example on how to use write your own {@link Analyzer} by using different {@link Tokenizer}s and {@link
  * org.apache.lucene.analysis.TokenFilter}s.
  *
- * @author Alberto Crivellari 
+ * @author Nicola Ferro (ferro@dei.unipd.it)
  * @version 1.0
  * @since 1.0
  */
-public class BasicAnalyzer extends Analyzer {
+public class SimpleAnalyzer extends Analyzer {
+
 	/**
 	 * Creates a new instance of the analyzer.
 	 */
-    public BasicAnalyzer() {
-        super();
-    }
+	public SimpleAnalyzer() {
+		super();
+	}
 
-    private TokenStream addFilters(Tokenizer source) {
-        TokenStream tokens;
-        tokens = new LowerCaseFilter(source);
-        //tokens = new NGramTokenFilter(tokens, 3);
-        tokens = new StopFilter(tokens, AnalyzerUtil.loadStopList("99webtools.txt"));
-        //tokens = new EnglishMinimalStemFilter(tokens);
-        //tokens = new EnglishPossessiveFilter(tokens);
-		//tokens = new LengthFilter(tokens, 4, 10);
-		//tokens = new PorterStemFilter(tokens);
-		//tokens = new KStemFilter(tokens);
-		//tokens = new LovinsStemFilter(tokens);
-		tokens = new NGramTokenFilter(tokens, 3);
-		//tokens = new ShingleFilter(tokens, 2);
+	@Override
+	protected TokenStreamComponents createComponents(String fieldName) {
 
-        return tokens;
-    }
+		//final Tokenizer source = new WhitespaceTokenizer(); // Do not use this (do not filter punctuation!)
 
-    @Override
-    protected TokenStreamComponents createComponents(String fieldName) {
-        //final Tokenizer source = new WhitespaceTokenizer();
-		//final Tokenizer source = new LetterTokenizer();
-        final Tokenizer source = new StandardTokenizer();
+		final Tokenizer source = new StandardTokenizer();
 
-        TokenStream tokens = addFilters(source);        
+		TokenStream tokens = new LowerCaseFilter(source);
 
-        return new TokenStreamComponents(source, tokens);
-    }
-    
-    @Override
-    protected Reader initReader(String fieldName, Reader reader) {
-        // return new HTMLStripCharFilter(reader);
-        return super.initReader(fieldName, reader);
-    }
+		tokens = new StopFilter(tokens, loadStopList("99webtools.txt")); // rel_ret=1165
 
-    @Override
-    protected TokenStream normalize(String fieldName, TokenStream in) {
-        return new LowerCaseFilter(in);
-    }
+		//tokens = new StopFilter(tokens, loadStopList("99webtools_mod.txt")); // rel_ret=1163
+		//tokens = new StopFilter(tokens, loadStopList("smart.txt")); // rel_ret=1163
+		//tokens = new StopFilter(tokens, loadStopList("glasgow_stop_words.txt")); // rel_ret=1162
+		//tokens = new StopFilter(tokens, loadStopList("t101_minimal.txt")); // rel_ret=1126
+		//tokens = new StopFilter(tokens, loadStopList("corenlp_hardcoded.txt")); // rel_ret=1119
+
+		//tokens = new NGramTokenFilter(tokens, 3); // Do not use this! MAP < 0.04
+
+		//tokens = new ShingleFilter(tokens, 2); // Do not use this! MAP < 0.06
+
+		return new TokenStreamComponents(source, tokens);
+	}
+
+	@Override
+	protected Reader initReader(String fieldName, Reader reader) {
+		// return new HTMLStripCharFilter(reader);
+
+		return super.initReader(fieldName, reader);
+	}
+
+	@Override
+	protected TokenStream normalize(String fieldName, TokenStream in) {
+		return new LowerCaseFilter(in);
+	}
 
 	/**
 	 * Main method of the class.
@@ -101,9 +88,15 @@ public class BasicAnalyzer extends Analyzer {
 	 *
 	 * @throws IOException if something goes wrong while processing the text.
 	 */
-    public static void main(String[] args) throws IOException {
-        final String text = "Hello wtf is going on";
-        AnalyzerUtil.consumeTokenStream(new BasicAnalyzer(), text);
-    }
+	public static void main(String[] args) throws IOException {
+
+		// text to analyze
+		final String text = "I now live in Rome where I met my wife Alice back in 2010 during a beautiful afternoon. " + "Occasionally, I fly to New York to visit the United Nations where I would like to work. The last " + "time I was there in March 2019, the flight was very inconvenient, leaving at 4:00 am, and expensive," + " over 1,500 dollars.";
+
+		// use the analyzer to process the text and print diagnostic information about each token
+		consumeTokenStream(new SimpleAnalyzer(), text);
+
+
+	}
 
 }
